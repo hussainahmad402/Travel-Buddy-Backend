@@ -31,7 +31,9 @@ class User extends Authenticatable implements JWTSubject
         'remember_token',
     ];
     protected $casts = [
-        'email_verified'=> 'bloean',
+       'email_verified' => 'boolean',
+        'email_verified_at' => 'datetime',
+        'password' => 'hashed',
     ];
 
     public function getJWTIdentifier(){
@@ -39,24 +41,5 @@ class User extends Authenticatable implements JWTSubject
     }
     public function getJWTCustomClaims(){
         return [];
-    }
-
-    /**
-     * The attributes that should be hidden for serialization.
-     *
-     * @var list<string>
-     */
-
-    /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
-     */
-    protected function casts(): array
-    {
-        return [
-            'email_verified_at' => 'datetime',
-            'password' => 'hashed',
-        ];
     }
 }

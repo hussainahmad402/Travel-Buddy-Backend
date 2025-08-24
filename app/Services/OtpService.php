@@ -11,12 +11,12 @@ class OtpService
     public function generateOtp(string $email, int $length = 6, int $expiryMinutes = 5): string
     {
         $otp = mt_rand(100000, 999999);
-        $expireAt = Carbon::now()->addMinutes($expiryMinutes);
+       $expireAt = Carbon::now('Asia/Karachi')->addMinutes($expiryMinutes);
 
         Otp::create([
             'email' => $email,
             'otp' => $otp,
-            'expiry_at' => $expireAt
+            'expire_at' => $expireAt
         ]);
 
         return $otp;
