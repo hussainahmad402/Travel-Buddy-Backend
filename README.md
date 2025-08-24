@@ -35,16 +35,16 @@ This API handles **user authentication, trip management, and document storage**,
 git clone https://github.com/your-username/travel-buddy-backend.git
 cd travel-buddy-backend
 ```
-##  Install dependencies
+##  2️⃣ Install dependencies
 ```
 composer install
 ```
-## Create .env file
+## 3️⃣ Create .env file
 ```
 cp .env.example .env
 ```
 
-### Update .env with your own settings:
+###  Update .env with your own settings:
 ```
 APP_NAME=TravelBuddy
 APP_ENV=local
@@ -77,10 +77,27 @@ JWT_SECRET=
 FILESYSTEM_DISK=public
 ```
 
-## Generate app key , Generate JWT secret & Run migrations
+## 4️⃣ Generate app key , Generate JWT secret & Run migrations
 ```
 php artisan key:generate
 php artisan jwt:secret
 php artisan migrate
 php artisan serve
+```
+## 🛠️ Useful Commands
+```
+# Run migrations
+php artisan migrate
+
+# Rollback migrations
+php artisan migrate:rollback
+
+# Clear cache
+php artisan cache:clear
+php artisan config:clear
+php artisan route:clear
+php artisan view:clear
+
+# Create model + migration + controller
+php artisan make:model Trip -mc
 ```
