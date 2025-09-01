@@ -50,5 +50,24 @@ class UserController extends Controller
                 'message' => $error->getMessage()
             ], 500);
         }
+
+
+
     }
+    public function deleteProfile(Request $request)
+    {
+        try {
+            $user = Auth::user();
+            $user->delete();
+            return response()->json([
+                'status' => true
+            ], 200);
+        } catch (Exception $error) {
+            return response()->json([
+                'status' => false,
+                'message' => $error->getMessage()
+            ], 500);
+        }
+    }
+
 }
