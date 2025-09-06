@@ -8,6 +8,7 @@ use App\Models\User;
 use Auth;
 use Exception;
 use Illuminate\Http\Request;
+use function PHPUnit\Framework\isEmpty;
 
 class TripController extends Controller
 {
@@ -143,13 +144,31 @@ class TripController extends Controller
     {
         try {
 
+            
+
             $request->validate(
                 [
                     'file' => 'required|mimes:pdf,doc,docx,txt,jpg,jpeg,png|max:2048'
                 ]
+                
 
             );
-            $trip = Trip::where('user_id', Auth::id())->findOrFail($id);
+            
+            $trip = Trip::where('user_id', Auth::id())->find($id);
+
+            // return response()->json([
+            //     'status'=> true,
+            //     'message'=> 'into the upload document'
+            //     ],200);
+
+            if (!$trip) {
+                return response()->json([
+                    'status'=> false,
+                    'message'=> 'Trip not found',
+                ]);
+                
+            }
+
 
             if ($request->hasFile('file')) {
                 $file = $request->file('file');
