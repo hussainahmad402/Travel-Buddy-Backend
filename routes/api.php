@@ -31,6 +31,8 @@ Route::middleware('auth:api')->group(
         Route::put('/trips/{id}', [TripController::class, 'updateTrip']);
         Route::delete('/trips/{id}', [TripController::class, 'destroyTrip']);
         Route::post('/trips/{id}/documents', [TripController::class, 'uploadDocument']);
+        Route::get('/trips/{id}/documents', [TripController::class, 'listDocuments']);
+        Route::delete('/trips/{if}/documents', [TripController::class,'deleteDocuments']);
     }
 );
 // ->middleware('auth:sanctum');

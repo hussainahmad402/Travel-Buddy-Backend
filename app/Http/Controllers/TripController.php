@@ -199,5 +199,60 @@ class TripController extends Controller
             ], 501);
         }
     }
+    public function listDocuments($id)
+{
+    try {
+        // Get the trip for the authenticated user
+        $trip = Trip::where('user_id', Auth::id())->find($id);
+
+        // Fetch related documents
+        
+        if (!$trip) {
+            return response()->json([
+                'status'=> false,
+                'message'=> 'Trip or Document not Found',
+                ],200);
+        }
+        $documents = $trip->documents;
+
+  
+        
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Documents fetched successfully',
+            'documents' => $documents
+        ], 200);
+
+    } catch (Exception $error) {
+        return response()->json([
+            'status' => false,
+            'message' => $error->getMessage()
+        ], 500);
+    }
+}
+public function deleteDocuments($id){
+    try {
+        $trip = Trip::where('user_id', Auth::id())->find($id);
+        if (!$trip) {
+            return response()->json([
+                'status'=> false,
+                'message'=> 'Trip or Document Not found'
+                ],404);
+            }
+        $trip->delete();
+        return response()->json([
+            'status'=> true,
+            'message'=> 'Trip Deleted Successfully'
+            ],200);
+        
+    } catch (Exception $error) {
+        return response()->json([
+            'status'=> false,
+            'message'=> $error->getMessage()
+            ], 200);
+    }
+}
+
 
 }
