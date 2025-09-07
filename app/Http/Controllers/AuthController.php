@@ -35,7 +35,7 @@ class AuthController extends Controller
             Mail::to($user->email)->send(new OtpMail($otp));
 
             return response()->json([
-                'status' => 'success',
+                'status' => true,
                 'message' => 'User register successfully, OTP send to you email',
                 'data' => $user
             ]);
@@ -58,9 +58,13 @@ class AuthController extends Controller
             Mail::to($request->email)->send(new OtpMail($otp));
 
 
-            return response()->json(['message' => 'OTP send successfully', 'otp' => $otp]);
+            return response()->json([
+                'status'=> true,
+                'message' => 'OTP send successfully', 'otp' => $otp]);
         } catch (\Exception $th) {
-            return response()->json(['message' => $th->getMessage()]);
+            return response()->json([
+                'status'=>false,
+                'message' => $th->getMessage()]);
         }
 
     }
@@ -75,9 +79,13 @@ class AuthController extends Controller
             $user->email_verified_at = now();
             $user->email_verified = true;
             $user->save();
-            return response()->json(['message' => 'OTP verified successfully , email confirmed'], 200);
+            return response()->json([
+                'status'=> true,
+                'message' => 'OTP verified successfully , email confirmed'], 200);
         }
-        return response()->json(['message' => 'Invalid OTP'], 422);
+        return response()->json([
+            'status'=>false,
+            'message' => 'Invalid OTP'], 422);
     }
 
     public function login(Request $request)
@@ -98,7 +106,9 @@ class AuthController extends Controller
 
         }
 
-        return response()->json(['message' => 'Login Success', 'token' => $token, 'user' => auth()->user()], 200);
+        return response()->json([
+            'status'=> true,
+            'message' => 'Login Success', 'token' => $token, 'user' => auth()->user()], 200);
     }
 
     public function forgotpassword(Request $request)

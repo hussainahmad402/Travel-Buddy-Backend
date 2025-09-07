@@ -37,7 +37,7 @@ class TripController extends Controller
             return response()->json([
                 'status' => true,
                 'message' => 'Trip created successfully',
-                'trip' => $trip,
+                'data' => $trip,
             ], 201);
         } catch (Exception $error) {
             return response()->json([
@@ -55,7 +55,7 @@ class TripController extends Controller
             return response()->json([
                 'status' => true,
                 'message' => 'Trips fetched successfully',
-                'Trips' => $trips,
+                'body' => $trips,
             ]);
         } catch (Exception $error) {
             return response()->json([
@@ -141,64 +141,44 @@ class TripController extends Controller
     }
 
     public function uploadDocument(Request $request, $id)
-    {
-        try {
+{
+    try {
+        // ✅ Validate path & name as strings
+        $request->validate([
+            'file_path' => 'required|string',
+            'file_name' => 'nullable|string',
+        ]);
 
-            
+        $trip = Trip::where('user_id', Auth::id())->find($id);
 
-            $request->validate(
-                [
-                    'file' => 'required|mimes:pdf,doc,docx,txt,jpg,jpeg,png|max:2048'
-                ]
-                
-
-            );
-            
-            $trip = Trip::where('user_id', Auth::id())->find($id);
-
-            // return response()->json([
-            //     'status'=> true,
-            //     'message'=> 'into the upload document'
-            //     ],200);
-
-            if (!$trip) {
-                return response()->json([
-                    'status'=> false,
-                    'message'=> 'Trip not found',
-                ]);
-                
-            }
-
-
-            if ($request->hasFile('file')) {
-                $file = $request->file('file');
-                $path = $file->store('trip_documents','public');
-
-                $documents = Document::create([
-                    'trip_id'=> $trip->id,
-                    'file_path'=>$path,
-                    'file_type'=>$file->getClientOriginalExtension()
-                ]);
-
-                return response()->json([
-                    'status'=> true,
-                    'message'=> 'Document Uploaded',
-                    'document'=> $documents
-                ],201);
-            }
+        if (!$trip) {
             return response()->json([
-                'status'=> false,
-                'message'=> 'File not Uploaded'
-                ],400);
-
-
-        } catch (Exception $error) {
-            return response()->json([
-                'status' => false,
-                'message' => $error->getMessage()
-            ], 501);
+                'status'  => false,
+                'message' => 'Trip not found',
+            ], 404);
         }
+
+        // ✅ Just store the path & name directly
+        $document = Document::create([
+            'trip_id'   => $trip->id,
+            'file_path' => $request->file_path,
+            'file_name' => $request->file_name ?? basename($request->file_path),
+        ]);
+
+        return response()->json([
+            'status'   => true,
+            'message'  => 'Document saved successfully',
+            'document' => $document,
+        ], 201);
+
+    } catch (\Exception $error) {
+        return response()->json([
+            'status'  => false,
+            'message' => $error->getMessage(),
+        ], 500);
     }
+}
+
     public function listDocuments($id)
 {
     try {
