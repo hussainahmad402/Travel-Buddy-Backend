@@ -27,12 +27,15 @@ Route::middleware('auth:api')->group(
     function () {
         Route::post('/trips', [TripController::class, 'store']);
         Route::get('/trips', [TripController::class, 'showAllTrips']);
+        Route::get('/trips/getfavourites', [TripController::class, 'listFavouriteTrips']);
         Route::get('/trips/{id}', [TripController::class, 'viewTrip']);
         Route::put('/trips/{id}', [TripController::class, 'updateTrip']);
         Route::delete('/trips/{id}', [TripController::class, 'destroyTrip']);
         Route::post('/trips/{id}/documents', [TripController::class, 'uploadDocument']);
         Route::get('/trips/{id}/documents', [TripController::class, 'listDocuments']);
-        Route::delete('/trips/{if}/documents', [TripController::class,'deleteDocuments']);
+        Route::delete('/trips/{id}/documents', [TripController::class, 'deleteDocuments']);
+        Route::post('/trips/{id}/favourite', [TripController::class, 'markAsFavourite']);
+        Route::delete('/trips/{id}/favourite', [TripController::class, 'unmarkAsFavourite']);
     }
 );
 // ->middleware('auth:sanctum');

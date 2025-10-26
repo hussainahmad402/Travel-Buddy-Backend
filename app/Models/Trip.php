@@ -15,6 +15,7 @@ class Trip extends Model
         'start_date',
         'end_date',
         'notes',
+        'favourite',
     ];
     public function user()
     {

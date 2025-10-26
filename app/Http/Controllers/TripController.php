@@ -141,98 +141,171 @@ class TripController extends Controller
     }
 
     public function uploadDocument(Request $request, $id)
-{
-    try {
-        // ✅ Validate path & name as strings
-        $request->validate([
-            'file_path' => 'required|string',
-            'file_name' => 'nullable|string',
-        ]);
+    {
+        try {
+            // ✅ Validate path & name as strings
+            $request->validate([
+                'file_path' => 'required|string',
+                'file_name' => 'nullable|string',
+            ]);
 
-        $trip = Trip::where('user_id', Auth::id())->find($id);
+            $trip = Trip::where('user_id', Auth::id())->find($id);
 
-        if (!$trip) {
+            if (!$trip) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Trip not found',
+                ], 404);
+            }
+
+            // ✅ Just store the path & name directly
+            $document = Document::create([
+                'trip_id' => $trip->id,
+                'file_path' => $request->file_path,
+                'file_name' => $request->file_name ?? basename($request->file_path),
+            ]);
+
             return response()->json([
-                'status'  => false,
-                'message' => 'Trip not found',
-            ], 404);
+                'status' => true,
+                'message' => 'Document saved successfully',
+                'document' => $document,
+            ], 201);
+
+        } catch (\Exception $error) {
+            return response()->json([
+                'status' => false,
+                'message' => $error->getMessage(),
+            ], 500);
         }
-
-        // ✅ Just store the path & name directly
-        $document = Document::create([
-            'trip_id'   => $trip->id,
-            'file_path' => $request->file_path,
-            'file_name' => $request->file_name ?? basename($request->file_path),
-        ]);
-
-        return response()->json([
-            'status'   => true,
-            'message'  => 'Document saved successfully',
-            'document' => $document,
-        ], 201);
-
-    } catch (\Exception $error) {
-        return response()->json([
-            'status'  => false,
-            'message' => $error->getMessage(),
-        ], 500);
     }
-}
 
     public function listDocuments($id)
-{
-    try {
-        // Get the trip for the authenticated user
-        $trip = Trip::where('user_id', Auth::id())->find($id);
+    {
+        try {
+            // Get the trip for the authenticated user
+            $trip = Trip::where('user_id', Auth::id())->find($id);
 
-        // Fetch related documents
-        
-        if (!$trip) {
-            return response()->json([
-                'status'=> false,
-                'message'=> 'Trip or Document not Found',
-                ],200);
-        }
-        $documents = $trip->documents;
+            // Fetch related documents
 
-  
-        
-
-        return response()->json([
-            'status' => true,
-            'message' => 'Documents fetched successfully',
-            'documents' => $documents
-        ], 200);
-
-    } catch (Exception $error) {
-        return response()->json([
-            'status' => false,
-            'message' => $error->getMessage()
-        ], 500);
-    }
-}
-public function deleteDocuments($id){
-    try {
-        $trip = Trip::where('user_id', Auth::id())->find($id);
-        if (!$trip) {
-            return response()->json([
-                'status'=> false,
-                'message'=> 'Trip or Document Not found'
-                ],404);
+            if (!$trip) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Trip or Document not Found',
+                ], 200);
             }
-        $trip->delete();
-        return response()->json([
-            'status'=> true,
-            'message'=> 'Trip Deleted Successfully'
-            ],200);
-        
-    } catch (Exception $error) {
-        return response()->json([
-            'status'=> false,
-            'message'=> $error->getMessage()
+            $documents = $trip->documents;
+
+
+
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Documents fetched successfully',
+                'documents' => $documents
             ], 200);
+
+        } catch (Exception $error) {
+            return response()->json([
+                'status' => false,
+                'message' => $error->getMessage()
+            ], 500);
+        }
     }
-}
+    public function deleteDocuments($id)
+    {
+        try {
+            $trip = Trip::where('user_id', Auth::id())->find($id);
+            if (!$trip) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Trip or Document Not found'
+                ], 404);
+            }
+            $trip->delete();
+            return response()->json([
+                'status' => true,
+                'message' => 'Trip Deleted Successfully'
+            ], 200);
+
+        } catch (Exception $error) {
+            return response()->json([
+                'status' => false,
+                'message' => $error->getMessage()
+            ], 200);
+        }
+    }
+
+    public function markAsFavourite($id)
+    {
+        try {
+
+            $trip = Trip::where('user_id', Auth::id())->findOrFail($id);
+            $trip->favourite = true;
+            $trip->save();
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Trip marked as favourite',
+                'trip' => $trip,
+            ], 200);
+        } catch (Exception $error) {
+            return response()->json([
+                'status' => false,
+                'message' => $error->getMessage(),
+            ], 500);
+        }
+    }
+
+    public function unmarkAsFavourite($id)
+    {
+        try {
+            $trip = Trip::where('user_id', Auth::id())->findOrFail($id);
+            $trip->favourite = false;
+            $trip->save();
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Trip unmarked as favourite',
+                'trip' => $trip,
+            ], 200);
+        } catch (Exception $error) {
+            return response()->json([
+                'status' => false,
+                'message' => $error->getMessage(),
+            ], 500);
+        }
+    }
+
+    public function listFavouriteTrips()
+    {
+        try {
+            // $favouriteTrips = Trip::where('user_id', Auth::id())
+            //     ->where('favourite', true)
+            //     ->get();
+            $favouriteTrips = Trip::where('favourite', true)->get();
+
+            if ($favouriteTrips->isEmpty()) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'No favourite trips found.',
+                    'trips' => [],
+                ], 404);
+            }
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Favourite trips fetched successfully.',
+                'data' => $favouriteTrips,
+            ], 200);
+        } catch (\Exception $error) {
+            return response()->json([
+                'status' => false,
+                'message' => 'An error occurred while fetching favourite trips.',
+                'error' => $error->getMessage(),
+            ], 500);
+        }
+    }
+
 
 
 }

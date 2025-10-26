@@ -51,23 +51,39 @@ class AuthController extends Controller
 
     public function sendOtp(Request $request)
     {
-
         try {
+            // ✅ Validate email format
             $request->validate(['email' => 'required|email']);
-            $otp = $this->otpservice->generateOtp($request->email);
-            Mail::to($request->email)->send(new OtpMail($otp));
 
+            // ✅ Check if user exists
+            $user = \App\Models\User::where('email', $request->email)->first();
+
+            if (!$user) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Email not found in our records.',
+                ], 404);
+            }
+
+            // ✅ Generate OTP
+            $otp = $this->otpservice->generateOtp($request->email);
+
+            // ✅ Send Email
+            \Mail::to($request->email)->send(new \App\Mail\OtpMail($otp));
 
             return response()->json([
-                'status'=> true,
-                'message' => 'OTP send successfully', 'otp' => $otp]);
+                'status' => true,
+                'message' => 'OTP sent successfully.',
+                'otp' => $otp, // optional — you can remove this in production
+            ]);
         } catch (\Exception $th) {
             return response()->json([
-                'status'=>false,
-                'message' => $th->getMessage()]);
+                'status' => false,
+                'message' => $th->getMessage(),
+            ], 500);
         }
-
     }
+
 
     public function verifyOtp(Request $request)
     {
@@ -80,12 +96,14 @@ class AuthController extends Controller
             $user->email_verified = true;
             $user->save();
             return response()->json([
-                'status'=> true,
-                'message' => 'OTP verified successfully , email confirmed'], 200);
+                'status' => true,
+                'message' => 'OTP verified successfully , email confirmed'
+            ], 200);
         }
         return response()->json([
-            'status'=>false,
-            'message' => 'Invalid OTP'], 422);
+            'status' => false,
+            'message' => 'Invalid OTP'
+        ], 422);
     }
 
     public function login(Request $request)
@@ -107,8 +125,11 @@ class AuthController extends Controller
         }
 
         return response()->json([
-            'status'=> true,
-            'message' => 'Login Success', 'token' => $token, 'user' => auth()->user()], 200);
+            'status' => true,
+            'message' => 'Login Success',
+            'token' => $token,
+            'user' => auth()->user()
+        ], 200);
     }
 
     public function forgotpassword(Request $request)
@@ -157,10 +178,10 @@ class AuthController extends Controller
 
             $user = User::where('email', $request->email)->first();
             // verify the otp 
-           if ( !$this->otpservice->verifyOtp($user->email, $request->otp)) {
-            
-            return response()->json(['message'=> 'Invalid OTP'], 404);
-           }
+            if (!$this->otpservice->verifyOtp($user->email, $request->otp)) {
+
+                return response()->json(['message' => 'Invalid OTP'], 404);
+            }
 
             $user->password = Hash::make($request->new_password);
             $user->save();
