@@ -147,6 +147,7 @@ class TripController extends Controller
             $request->validate([
                 'file_path' => 'required|string',
                 'file_name' => 'nullable|string',
+                'file_type' => 'nullable|string',
             ]);
 
             $trip = Trip::where('user_id', Auth::id())->find($id);
@@ -163,6 +164,7 @@ class TripController extends Controller
                 'trip_id' => $trip->id,
                 'file_path' => $request->file_path,
                 'file_name' => $request->file_name ?? basename($request->file_path),
+                'file_type' => $request->file_type ?? '',
             ]);
 
             return response()->json([
