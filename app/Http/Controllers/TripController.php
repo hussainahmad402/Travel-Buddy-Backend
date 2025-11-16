@@ -88,40 +88,41 @@ class TripController extends Controller
             ], 500);
         }
     }
-    public function updateTrip(Request $request, $id)
-    {
-        try {
-            $request->validate(
-                [
-                    'title' => 'nullable|string|max:255',
-                    'destination' => 'nullable|string|max:255',
-                    'start_date' => 'nullable|date',
-                    'end_date' => 'nullable|date|after_or_equla:start_date',
-                    'notes' => 'nullable|string|max:255',
-                ]
-            );
-            $trip = Trip::where('user_id', Auth::id())->findOrFail($id);
-            $trip->update([
-                'title' => $request->title ?? $trip->title,
-                'destination' => $request->destination ?? $trip->destination,
-                'start_date' => $request->start_date ?? $trip->start_date,
-                'end_date' => $request->end_date ?? $trip->end_date,
-                'notes' => $request->notes ?? $trip->notes,
-            ]);
-            return response()->json([
-                'status' => true,
-                'message' => 'Trip Updated Successfully',
-                'Trip' => $trip,
-            ], 200);
+  public function updateTrip(Request $request, $id)
+{
+    try {
+        $request->validate([
+            'title' => 'nullable|string|max:255',
+            'destination' => 'nullable|string|max:255',
+            'start_date' => 'nullable|date',
+            'end_date' => 'nullable|date|after_or_equal:start_date',
+            'notes' => 'nullable|string|max:255',
+        ]);
 
-        } catch (Exception $error) {
+        $trip = Trip::where('user_id', Auth::id())->findOrFail($id);
 
-            return response()->json([
-                'status' => false,
-                'message' => $error->getMessage()
-            ], 500);
-        }
+        $trip->update([
+            'title'       => $request->title ?? $trip->title,
+            'destination' => $request->destination ?? $trip->destination,
+            'start_date'  => $request->start_date ?? $trip->start_date,
+            'end_date'    => $request->end_date ?? $trip->end_date,
+            'notes'       => $request->notes ?? $trip->notes,
+        ]);
+
+        return response()->json([
+            'status'  => true,
+            'message' => 'Trip updated successfully',
+            'data'    => $trip, // <-- Correct key for Flutter
+        ], 200);
+
+    } catch (\Exception $error) {
+        return response()->json([
+            'status' => false,
+            'message' => $error->getMessage()
+        ], 500);
     }
+}
+
 
     public function destroyTrip($id)
     {
@@ -143,11 +144,9 @@ class TripController extends Controller
     public function uploadDocument(Request $request, $id)
     {
         try {
-            // ✅ Validate path & name as strings
+            // ✅ Validate uploaded file
             $request->validate([
-                'file_path' => 'required|string',
-                'file_name' => 'nullable|string',
-                'file_type' => 'nullable|string',
+                'file' => 'required|file|max:10240', // max 10 MB
             ]);
 
             $trip = Trip::where('user_id', Auth::id())->find($id);
@@ -159,17 +158,22 @@ class TripController extends Controller
                 ], 404);
             }
 
-            // ✅ Just store the path & name directly
+            // ✅ Store the file directly in public/documents
+            $uploadedFile = $request->file('file');
+            $fileName = time() . '_' . $uploadedFile->getClientOriginalName();
+            $uploadedFile->move(public_path('documents'), $fileName);
+
+            // ✅ Save document record in database
             $document = Document::create([
                 'trip_id' => $trip->id,
-                'file_path' => $request->file_path,
-                'file_name' => $request->file_name ?? basename($request->file_path),
-                'file_type' => $request->file_type ?? '',
+                'file_path' => 'documents/' . $fileName, // path accessible publicly
+                'file_name' => $fileName,
+                'file_type' => $uploadedFile->getClientOriginalExtension(),
             ]);
 
             return response()->json([
                 'status' => true,
-                'message' => 'Document saved successfully',
+                'message' => 'Document uploaded successfully',
                 'document' => $document,
             ], 201);
 
@@ -181,38 +185,51 @@ class TripController extends Controller
         }
     }
 
-    public function listDocuments($id)
-    {
-        try {
-            // Get the trip for the authenticated user
-            $trip = Trip::where('user_id', Auth::id())->find($id);
+public function listDocuments($id)
+{
+    try {
+        // Get the trip for the authenticated user
+        $trip = Trip::where('user_id', Auth::id())->find($id);
 
-            // Fetch related documents
-
-            if (!$trip) {
-                return response()->json([
-                    'status' => false,
-                    'message' => 'Trip or Document not Found',
-                ], 200);
-            }
-            $documents = $trip->documents;
-
-
-
-
-            return response()->json([
-                'status' => true,
-                'message' => 'Documents fetched successfully',
-                'documents' => $documents
-            ], 200);
-
-        } catch (Exception $error) {
+        if (!$trip) {
             return response()->json([
                 'status' => false,
-                'message' => $error->getMessage()
-            ], 500);
+                'message' => 'Trip or Document not Found',
+            ], 200);
         }
+
+        $documents = $trip->documents->map(function ($doc) {
+            // Remove the timestamp prefix for display
+            $originalName = preg_replace('/^\d+_/', '', $doc->file_name);
+
+            // Convert stored file_path to full URL
+            $fileUrl = url($doc->file_path); // e.g., http://yourdomain.com/storage/documents/...
+
+            return [
+                'id' => $doc->id,
+                'trip_id' => $doc->trip_id,
+                'file_path' => $fileUrl, // send full URL
+                'file_name' => $originalName,
+                'file_type' => $doc->file_type,
+                'created_at' => $doc->created_at,
+                'updated_at' => $doc->updated_at,
+            ];
+        });
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Documents fetched successfully',
+            'documents' => $documents
+        ], 200);
+
+    } catch (\Exception $error) {
+        return response()->json([
+            'status' => false,
+            'message' => $error->getMessage()
+        ], 500);
     }
+}
+
     public function deleteDocuments($id)
     {
         try {
